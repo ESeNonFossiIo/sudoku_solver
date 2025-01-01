@@ -36,6 +36,6 @@ def test_board_constructor():
 
     b[0, 1] = 1
     assert not b.isValid()
-    
+
     b[0, 1] = 0
-    
+
