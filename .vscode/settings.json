@@ -10,5 +10,7 @@
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
     "flake8.args": [
         "--max-line-length=120"
-    ]
+    ],
+    "docwriter.style": "NumPy",
+    "python.linting.pylintEnabled": true,
 }
