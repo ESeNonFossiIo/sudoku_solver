@@ -80,6 +80,13 @@ class Board(object):
         """
         return self.__get_matrix_as_string(self.__values[:, :, index-1]).replace('True', 'X').replace('False', ' ')
 
+    def get_board(self):
+        """ Return the board.
+            Returns:
+                numpy.array: Board.
+        """
+        return self.__board
+
     def __setitem__(self, key, value):
         """ Set the value of a cell in the board.
 
