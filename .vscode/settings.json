@@ -13,4 +13,5 @@
     ],
     "docwriter.style": "NumPy",
     "python.linting.pylintEnabled": true,
+    "jupyter.debugJustMyCode": false
 }
