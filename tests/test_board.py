@@ -10,8 +10,8 @@ def test__check_valid_value():
     assert _check_valid_value(9), "Error in _check_valid_value."
     assert not _check_valid_value(10), "Error in _check_valid_value."
     assert not _check_valid_value(-1), "Error in _check_valid_value."
-    
-    
+
+
 def test__check_duplicates():
     """ Test the _check_duplicates function """
     assert _check_no_duplicates([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), \
@@ -35,7 +35,6 @@ def test_board_constructor():
     assert b[0, 0] == 1, "Error in the __setitem__ method"
 
     b[0, 1] = 1
-    assert not b.isValid()
+    assert not b.is_valid()
 
     b[0, 1] = 0
-
