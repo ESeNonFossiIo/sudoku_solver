@@ -1,5 +1,6 @@
 import numpy as np
 from collections import Counter
+from termcolor import colored
 
 
 def _check_no_duplicates(values):
@@ -27,7 +28,7 @@ def _is_a_valid_board(board):
         if not _check_no_duplicates(board[:, i]):
             return False
     for i in range(3):
-        for j in range(3):  
+        for j in range(3):
             ic, jc = 3 * i, 3 * j
             if not _check_no_duplicates(board[ic:ic + 3, jc:jc + 3].flatten()):
                 return False
@@ -61,7 +62,86 @@ def _check_valid_value(value):
     """
     return 0 <= value <= 9
 
-# TODO: function to print difference between boards using colors
+
+def _generate_rnd_board_using_backtracking(seed=None):
+    """ Generate a random board using backtracking.
+        Args:
+            seed (int): Seed for the random number generator. Default is None.
+        Returns:
+            numpy.array: Random board.
+    """
+
+    if seed is not None:
+        np.random.seed(seed)
+
+    board = np.zeros((9, 9), dtype=int)
+
+    def _find_empty_location(board, location):
+        """ Find an empty location in the board.
+            Args:
+                board (numpy.array): Board.
+                location (list): List to store the location.
+            Returns:
+                bool: True if there is an empty location, False otherwise.
+        """
+        for i in range(9):
+            for j in range(9):
+                if board[i, j] == 0:
+                    location[0] = i
+                    location[1] = j
+                    return True
+        return False
+
+    def _solve_board(board):
+        location = [0, 0]
+        if not _find_empty_location(board, location):
+            return True, board
+        row, col = location
+        values = np.random.permutation(range(1, 10))
+
+        board2 = board.copy()
+        for num in values:
+            board2[row, col] = num
+            if _is_a_valid_board(board2):
+                status, board3 = _solve_board(board2)
+                if status:
+                    return True, board3
+                else:
+                    board2[row, col] = 0
+
+        return False, board
+
+    return _solve_board(board)
+
+
+def bold(value):
+    """ Return a bold value.
+        Args:
+            value (str): Value to be bold.
+        Returns:
+            str: Bold value.
+    """
+    return f"\033[1m{value}\033[0m"
+
+
+def print_board_difference(board1, board2):
+    """ Print the board of the first and add the difference with the second in a different color.
+        Args:
+            board1 (numpy.array): First board.
+            board2 (numpy.array): Second board.
+    """
+    for i in range(9):
+        if i % 3 == 0:
+            print("+---------+---------+---------+")
+        for j in range(9):
+            if j % 3 == 0:
+                print("|", end="")
+            if board1[i, j] == board2[i, j]:
+                print(bold(f" {board1[i, j]} "), end="")
+            else:
+                print(colored(f" {board2[i, j]} ", 'red'), end="")
+        print("|")
+    print("+---------+---------+---------+")
 
 
 class Board(object):
@@ -233,7 +313,6 @@ class Board(object):
 
     def set_matrix(self, matrix: list[list[int]]):
         """ Set the values of the board using a matrix.
-
             Args:
                 matrix (list of lists): List of lists with the values of the board.
         """
@@ -243,49 +322,30 @@ class Board(object):
         self.__values = np.ones((9, 9, 9), dtype=bool)
         self.__update_values()
 
-    def random_board(self, seed=None):
+    @classmethod
+    def random_board(cls, seed=None):
         """ Generate a valid random board.
             Args:
                 seed (int): Seed for the random number generator. Default is None.
             Returns:
                 numpy.array: Random board.
         """
-
         if seed is not None:
             np.random.seed(seed)
 
-        def _random_value(_board, _values):
-            while True:
-                i, j, k = np.random.randint(0, 9, 3)
+        full_board = _generate_rnd_board_using_backtracking(seed)[1]
 
-                if _values[i, j, k]:
-                    old_board = _board.copy()
-                    old_values = _values.copy()
-                    _board[i, j] = k + 1
-                    _values[i, :, k] = False
-                    _values[:, j, k] = False
-                    ic, jc = 3 * (i // 3), 3 * (j // 3)
-                    _values[ic:ic + 3, jc:jc + 3, k] = False
-                    _values[i, j, :] = False
-                    _values[i, j, k] = True
-                    if _is_a_valid_board(_board) and _is_a_valid_board_values(_values):
-                        return _board, _values
-                    else:
-                        # Revert
-                        _board = old_board
-                        _values = old_values
-                        # Exclude this combination
-                        _values[i, j, k] = False
+        elements = [(i, j) for i in range(9) for j in range(9)]
+        np.random.shuffle(elements)  # Randomize the order of the elements
+        for i, j in elements:
+            old_board = full_board.copy()
+            full_board[i, j] = 0
+            if not cls.is_solvable(full_board):
+                full_board = old_board
 
-        _board = np.zeros((9, 9), dtype=int)
-        _values = np.ones((9, 9, 9), dtype=bool)
-        do = True
-        while do:
-            _board, _values = _random_value(_board, _values)
-            self.set_matrix(_board)
-            do = not self.solve()
-
-        return _board
+        new_board = cls()
+        new_board.set_matrix(full_board)
+        return new_board
 
     def available_values(self, i, j):
         """ Return the available values for a cell.
@@ -296,13 +356,25 @@ class Board(object):
                 numpy.array: Available values for the cell.
         """
         return [v for v in range(9) if self.__values[i, j, v]]
-        
+
     def discover_values(self):
         """ Discover the values of the board using the values of __values.
             If there is only one valid value for a cell, it is set in __board.
         """
         self.__update_board()
         self.__update_values()
+
+    @classmethod
+    def is_solvable(cls, board):
+        """ Check if the board is solvable.
+            Args:
+                board (numpy.array): Board to be checked.
+            Returns:
+                bool: True if the board is solvable, False otherwise.
+        """
+        b = cls()
+        b.set_matrix(board)
+        return b.solve()
 
     def solve(self):
         """ Solve the sudoku board.
